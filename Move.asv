@@ -1,0 +1,123 @@
+classdef Move < handle
+    
+    properties
+        
+    end
+    methods
+        
+        function self = Move()
+        end
+        
+        function moveBrick(self, UR3, Item, goalPose)
+            
+            iQ = Item.model.getpos;
+            TiQ = Item.model.fkine(iQ);
+            currentQ = UR3.model.getpos;
+            newQ = UR3.model.ikine(transl(Item.TiQ), currentQ);
+
+            % Now go through a loop using the previous joint as the guess to draw a
+            % line from [-0.75,-0.5,0] to [-0.75,0.5,0]
+            qMatrix = jtraj(currentQ, newQ, 50);
+            for i = 1:size(qMatrix, 1)
+                robot.animate(UR3.model, qMatrix(i,:));
+                drawnow();
+            end
+            pause(0.01)
+            
+            iQ = Item.model.getpos;
+            TiQ = Item.model.fkine(iQ);
+            currentQ = UR3.model.getpos;
+            newQ = UR3.model.ikine(transl(Item.TiQ, 
+        end
+        
+    end
+    
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% function [RobotArmGoalPose,Item] = Move(RobotArm,GoalPose,Item)
+% 
+% zoffset = -0.1;
+% 
+% % animate 1
+% % initQ = RobotArm.model.getpos .* [1,0,0,0,0,0];
+% 
+% goalQ = RobotArm.model.ikcon(GoalPose, RobotArm.model.getpos);
+% 
+% jointTrajectory = jtraj(RobotArm.model.getpos(), goalQ, 50);
+% 
+% for trajStep = 1:size(jointTrajectory,1)
+%     q = jointTrajectory(trajStep,:);
+%     RobotArm.model.animate(q);
+%     if isempty(Item) == 0
+%         newBase = RobotArm.model.fkine(q);
+%     end
+%     for i = 1:size(Item,1)
+%         Item(i).model.base = newBase;
+%         Item(i).model.animate(0);
+%     end
+%     pause(0.01);
+% end
+% pause(0.01);
+% 
+% if size(GoalPose,2) == 6
+%     return
+% else
+%     goalQ = RobotArm.model.ikcon(GoalPose * trotx(pi),RobotArm.model.getpos);
+% end
+% 
+% jointTrajectory = jtraj(RobotArm.model.getpos(), goalQ,30);
+% 
+% for trajStep = 1:size(jointTrajectory,1)
+%     q = jointTrajectory(trajStep,:);
+%     RobotArm.model.animate(q);
+%     if isempty(Item) == 0
+%         newBase = RobotArm.model.fkine(q);
+%     end
+%     
+%     for i = 1:size(Item,1)
+%         Item(i).model.base = newBase;
+%         Item(i).model.animate(0);
+%     end
+%     pause(0.01);
+% end
+% pause(0.01);
+% 
+% RobotArmGoalPose = RobotArm.model.fkine(RobotArm.model.getpos);
+% end
