@@ -1,6 +1,10 @@
 classdef Movement < handle
     %MOVEMENT Class for moving Robot Arm, pose and matrix
 
+    % !!!!!!!!!!!!!
+    % ORIGINAL movement CLASS NOT USED AYNMORE---
+    % !!!!!!!!!!!!!
+    
     % referenced CowHerd class & Lab4 Solutions file for jtraj function
     % fkine used to find joint-config needed for end-effector
     % to move towards brickPose

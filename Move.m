@@ -1,5 +1,9 @@
 classdef Move < handle
     
+    % !!!!!!!!!!!!!
+    % SECONDARY movement CLASS NOT USED AYNMORE---
+    % !!!!!!!!!!!!!
+    
     properties
         
     end
@@ -9,11 +13,12 @@ classdef Move < handle
         end
         
         function moveBrick(self, robot, Item, goalPose)
-            itemQ = Item.model.getpos;
-            currentQ = robot.model.getpos;
-%             newQ = robot.model.ikine(transl(Item.TQ), currentQ);
+            itemQ = Item.model.base
+            currentQ = robot.model.getpos
+            goalQ = robot.model.ikine(Item.model.base, ([20 20 20 20 20 20]));
+% newQ = robot.model.ikine(transl(Item.TQ), currentQ);
 
-            qMatrix = jtraj(currentQ, itemQ, 50);
+            qMatrix = jtraj(currentQ, goalQ, 50);
             for i = 1:size(qMatrix, 1)
                 robot.model.animate(qMatrix(i,:));
                 pause(0.1);

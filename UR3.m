@@ -49,11 +49,11 @@ function GetUR3Robot(self, modelName, workspace)
     L5 = Link('d',0.08535,'a',0,       'alpha',-pi/2,'offset',0);
     L6 = Link('d',0.0819, 'a',0,       'alpha',0,    'offset',0);
 
-    L1.qlim = [deg2rad(-180),deg2rad(180)];
-    L2.qlim = [deg2rad(-180),deg2rad(180)];
-    L3.qlim = [deg2rad(-180),deg2rad(180)];
-    L4.qlim = [deg2rad(-180),deg2rad(180)];
-    L5.qlim = [deg2rad(-180),deg2rad(180)];
+    L1.qlim = [deg2rad(-360),deg2rad(360)];
+    L2.qlim = [deg2rad(-180),deg2rad(0)];
+    L3.qlim = [deg2rad(-135),deg2rad(135)];
+    L4.qlim = [deg2rad(-360),deg2rad(360)];
+    L5.qlim = [deg2rad(-360),deg2rad(360)];
     L6.qlim = [deg2rad(-360),deg2rad(360)];
         
     self.model = SerialLink([L1 L2 L3 L4 L5 L6],'name', modelName);
@@ -66,8 +66,8 @@ function GetUR3Robot(self, modelName, workspace)
     
     % self.model.base = self.model.base * transl(2.5,-2.0,0.01);
      self.model.base = self.model.base * self.location;
-%      q = zeros(1,6);
-%      self.model.plot(q,'workspace', workspace);
+    % q = zeros(1,6);
+    % self.model.plot(q,'workspace', workspace);
 end
 
 %% PlotAndColourRobot
@@ -85,7 +85,7 @@ end
             self.model.plot3d(zeros(1,self.model.n),'noarrow','workspace',self.workspace);
             if isempty(findobj(get(gca,'Children'),'Type','Light'))
                 camlight
-            end  
+            end
             self.model.delay = 0;
 
 %           Try to correctly colour the arm (if colours are in ply file data)
@@ -107,7 +107,7 @@ end
 
 %% Point Cloud
 
-        function [pointCloud] = PointCloud(self, stepCount)
+        function [pointCloud] = PointCloudSphere(self, stepCount)
 % Lab 3 Point Cloud
 % 2.4 Sample the joint angles within the joint limits at 'step-Count' degree increments between each of the joint limits
 % & 2.5 Use fkine to determine the point in space for each of these poses, so that you end up with a big list of points
@@ -117,37 +117,77 @@ end
         pointCloudeSize = prod(floor((qlim(1:5,2)-qlim(1:5,1))/stepRads + 1));
         pointCloud = zeros(pointCloudeSize,3);
         counter = 1;
+        count = 1;
         tic
+        
             for q1 = qlim(1,1):stepRads:qlim(1,2)
                 for q2 = qlim(2,1):stepRads:qlim(2,2)        
                     for q3 = qlim(3,1):stepRads:qlim(3,2)            
                         for q4 = qlim(4,1):stepRads:qlim(4,2)                
                             for q5 = qlim(5,1):stepRads:qlim(5,2)                    
                                 % Don't need to worry about joint 6, just assume it=0
-                                    q6 = 0;%                     
-                                for q6 = qlim(6,1):stepRads:qlim(6,2)                        
-                                    q = [q1,q2,q3,q4,q5,q6];                        
+%                                 q6 = 0;%                     
+%                                 for q6 = qlim(6,1):stepRads:qlim(6,2)                        
+                                    q = [q1,q2,q3,q4,q5,0];                        
                                     tr = self.model.fkine(q);                                                
                                     pointCloud(counter,:) = tr(1:3,4)';                        
-                                    counter = counter + 1;                         
+                                    counter = counter + 1;
+                                    count = count + 1;
                                     if mod(counter/pointCloudeSize * 100,1) == 0                            
                                         disp(['After ',num2str(toc),' seconds, completed ',num2str(counter/pointCloudeSize * 100),'% of poses']);                        
-                                    end%                     
-                                end
+                                    end%
+%                                 end
                             end
                         end
                     end
                 end
             end
-        end
-        
-        % Convhull function to calculate volume of pointCloud
-        % https://www.mathworks.com/help/matlab/ref/convhull.html#bspql3e-1
+            
+            % makes pointCloud global so that other functions and
+            % parameters can access it without needing to call 
+            self.pointCloud = pointCloud;
+            
+            %------------------------Max Reach----------------------------
+            % tabulate all point cloud into rows and columns of data points
+            % extract maximum value points in point cloud in each direction
+            % find the maximum value and calculate the difference between
+            % that 'max point' and base of Robot
+            
+            % UR3 Spec Sheet declares Arm Reach = 500mm (0.5m)
+            % https://www.universal-robots.com/media/240787/ur3_us.pdf
+            % Should expect a value around 0.5m
+            
+            % NOTE: a peer student walked through this code for me, it is
+            % theirs and I am simply referencing it
+            
+            [row, column] = size(self.pointCloud);
+            value = zeros(row, 1);
+                       
+            for points = 1:row
+                % Base Point:
+                bP = self.model.base(1:3, 4)';
+                % Max Point Cloud Point:
+                maxPCP = self.pointCloud(points, :);
+                
+                value(points, 1) = norm(maxPCP - bP);
+            end
 
-        function av = MaxVolume(self)
+            [reachRadius, table] = max(value);
+            self.maxReachRadius = reachRadius
+                    
+            % -----------------------Max Volume---------------------------
+            % Convhull function to calculate volume of PointCloudSphere
+            % https://www.mathworks.com/help/matlab/ref/convhull.html#bspql3e-1
+            
             [k,av] = convhull(self.pointCloud);
-            self.maxVolume = av;
+            self.maxVolume = av
+            
         end
+
+%         function av = MaxVolume(self)
+%             [k,av] = convhull(self.pointCloud);
+%             self.maxVolume = av;
+%         end
 
 %% Second Approach
 
@@ -183,12 +223,5 @@ end
 %                     end
 %                 end
 %             end
-%         disp('max side radius is: ');
-%         sideRadius = max([abs(self.pointCloud(:,1)),abs(self.pointCloud(:,2))]);
-%         disp('max top radius is: ');
-%         topRadius  = max([abs(self.pointCloud(:,3))]);
-%         disp('max volume is: ');
-%         volume     = (4 * pi * ([sideRadius, topRadius])^3)/3;
-%         end
     end
 end

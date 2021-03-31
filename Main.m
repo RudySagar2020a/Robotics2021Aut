@@ -10,7 +10,7 @@ clf
 
 %% Setup Background Environment
 
-workspace = [-1 1 -1 1 0 1];
+workspace = [-2 2 -2 2 0 2];
 % scale = 0;
  
 % [xTL,BL;xTR,xBR],[yTL,yBL;yTR,yBR],[zTL,zBL;zTR,zBR]
@@ -48,7 +48,7 @@ UR5Arm = LinearUR5(false);
 
 % EDIT ITEM TRANSLATION HERE---
 
-B1  = transl(2.5,  -1.0,  0.005);              %EDIT TRANSLATE FOR Brick1
+B1  = transl(2.5,  -1.2,  0.005);              %EDIT TRANSLATE FOR Brick1
 B2  = transl(2.45, -0.75, 0.005)*trotz(pi/2);  %EDIT TRANSLATE FOR Brick2
 B3  = transl(1.65, -1.0,  0.005);              %EDIT TRANSLATE FOR Brick3
 B4  = transl(1.8,  -0.75, 0.005)*trotz(pi/2);  %EDIT TRANSLATE FOR Brick4
@@ -56,7 +56,7 @@ B5  = transl(2.2,  -0.9,  0.005);              %EDIT TRANSLATE FOR Brick5
 B6  = transl(2.8,  1.0,   0.005);              %EDIT TRANSLATE FOR Brick6
 B7  = transl(2.5,  0.4,   0.005)*trotz(pi/2);  %EDIT TRANSLATE FOR Brick7
 B8  = transl(1.5,  0.9,   0.005)*trotz(pi/2);  %EDIT TRANSLATE FOR Brick8
-B9  = transl(1.35, 0.25,  0.005);              %EDIT TRANSLATE FOR Brick9
+B9  = transl(1.35, 0.45,  0.005);              %EDIT TRANSLATE FOR Brick9
 
 % 3D PLOT ITEMS IN WORKSPACE---
 
@@ -70,44 +70,55 @@ Brick7 = Item(workspace,'Brick','7', B7);
 Brick8 = Item(workspace,'Brick','8', B8);
 Brick9 = Item(workspace,'Brick','9', B9);
 
-% fence1 = Item(workspace,'fence','11',transl(-1.0, 2.65, 1.1));
-% fence2 = Item(workspace,'fence','12',transl(-1.0, 0.5, 1.1));
-% fence3 = Item(workspace,'fence','13',transl(-1.0,-2.50, 1.1));
-% 
-% eStop  = Item(workspace, 'eStopLP',   '15', transl(-2.0, 3.9, 1.0));
-% fireExt= Item(workspace, 'fireExtLP', '16', transl(-3.0, 3.75,0.15));
+fence1 = Item(workspace,'fence','11',transl(-1.0, 2.65, 1.1));
+fence2 = Item(workspace,'fence','12',transl(-1.0, 0.5, 1.1));
+fence3 = Item(workspace,'fence','13',transl(-1.0,-2.50, 1.1));
+
+eStop  = Item(workspace, 'eStopLP',   '15', transl(-2.0, 3.9, 1.0));
+fireExt= Item(workspace, 'fireExtLP', '16', transl(-3.0, 3.75,0.15));
 
 %% Point Cloud - Max Reach and Max Volume
 
-% [pointCloud] = UR3.PointCloud();
+% Argument input = number of degrees between each point in the cloud
+% the lower the value, the more points in pointCloud, longer process time
+% UR3Arm.PointCloudSphere(45);
 
 %% Pickup and Drop-off Location (Pose & Location)
 
 % GoalPose for Brick Wall
-goalPose = transl(2.0, -0.25, 0.005);
+goalPose = transl(2.0, -0.25, 0.1);
 
 % You need to be able to provide evidence (log, command window, text on the
 % GUI or figure) that your robot really does get the end-effector to the 
 % desired pickup location. SHOULD BE WITHIN 10-20MM (=0.01)
-endEffectorCheck = transl(0.0, 0.0, -0.1);
+brickOffset = 1.0;
+endEffectorCheck = transl(0.0, 0.0, brickOffset);
 
 % Initialise Movement class to perform Movement functions
-move = Move();
+% move = Move();
 
-% Main Movement - Pick and Place of Bricks
+% --------------Main Movement - Pick and Place of Bricks-------------------
+% Method 1
 
 % disp('Motion: Searching for Brick and Picking Up');
 % Move(UR3Arm, Brick1.model.base, []);
-% 
+
 % disp('Motion: Moving Brick to Drop-Off Location');
 % Move(UR3Arm, dropOff, [Brick1]);
 
-disp('Motion: Searching for Brick and Picking Up');
-% B1End = B1 * endEffectorCheck;
-move.moveBrick(UR3Arm, Brick1, goalPose);
+% Method 2
+disp('Motion: Searching for Brick, Picking Up and Moving to Wall');
 
-disp('Motion: Moving Brick to Drop-Off Location');
-move.moveBrick(UR3Arm, Brick1, goalPose * trotx(pi));
+% MoveFunction(UR3Arm, Brick1, goalPose);
+% MoveFunction(UR3Arm, Brick2, goalPose);
+% MoveFunction(UR3Arm, Brick3, goalPose);
+% MoveFunction(UR3Arm, Brick4, goalPose);
+% MoveFunction(UR3Arm, Brick5, goalPose);
+
+MoveFunction(UR5Arm, Brick9, goalPose*endEffectorCheck);
+% MoveFunction(UR5Arm, Brick8, goalPose);
+% MoveFunction(UR5Arm, Brick7, goalPose);
+% MoveFunction(UR5Arm, Brick6, goalPose);
 
 disp('Brick Wall built! Project Complete!');
 
